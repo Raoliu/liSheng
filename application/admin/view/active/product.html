@@ -1,0 +1,64 @@
+<link rel="stylesheet" href="/layui/css/layui.css" media="all"/>
+<div class="layui-card-body ">
+    <div class="layui-inline">
+        <input class="layui-input" name="title" id="title" autocomplete="off">
+    </div>
+    <button class="layui-btn" data-type="reload">搜索</button>
+
+    <table  lay-filter="table-hide" id="test" style="display: none" lay-data="{height:310, cellMinWidth: 80}">
+    </table>
+</div>
+
+
+<script type="text/javascript" src="/layui/layui.js"></script>
+<script>
+    layui.use(['form', 'table'], function(){
+        var table = layui.table;
+        var form = layui.form;
+        table.render({
+            elem: '#test'
+            ,url:"{:url('/admin/selectJson')}"
+            ,id: 'testReload'
+            ,cols: [[
+                {type:'checkbox'}
+                ,{field:'id',  title: 'ID', sort: true}
+                ,{field:'name',  title: '商品名称'}
+            ]]
+            ,page: true
+
+        });
+
+        var $ = layui.$, active = {
+            reload: function(){
+                var title = $('#title');
+
+                //执行重载
+                table.reload('testReload', {
+                    page: {
+                        curr: 1 //重新从第 1 页开始
+                    }
+                    ,where: {
+                        title: title.val()
+                    }
+                }, 'data');
+            },
+
+        };
+
+
+
+        window.getChoseId=function () {
+            var checkStatus = table.checkStatus('testReload')
+                ,data = checkStatus.data;
+            return data
+        }
+        $('.layui-card-body .layui-btn').on('click', function(){
+            var type = $(this).data('type');
+            active[type] ? active[type].call(this) : '';
+        });
+    });
+    function child(data){
+        var question = data
+    }
+
+</script>

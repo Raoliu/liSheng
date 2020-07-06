@@ -1,0 +1,174 @@
+{extend name="base/base" /}
+{block name="main"}
+<form id="form" method="post" class="layui-form layui-form-pane" action="{:url('/admin/activeEdit')}">
+    <div class="layui-form-item">
+        <label class="layui-form-label">活动名称</label>
+        <div class="layui-input-block">
+            <input type="text" name="name" placeholder="请输入" autocomplete="off" class="layui-input"
+                   value="{:isset($list.name)?$list.name:''}" lay-verify="required">
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">活动类型</label>
+        <div class="layui-input-block">
+            <input type="radio" name="type" value="1" title="拼团" {if isset($list.type) && $list.type==1}checked=""{/if}>
+            <input type="radio" name="type" value="2" title="抽奖" {if isset($list.type) && $list.type==2}checked=""{/if}>
+        </div>
+    </div>
+    <div class="layui-form-item">
+        <label class="layui-form-label">活动图片</label>
+        <button type="button" class="layui-btn" id="test1">上传图片</button>
+        <div class="layui-upload-list">
+            {if isset($list.image)}
+            <img class="layui-upload-img" id="demo1" style="width: 30%;height: 30%" src="{php}echo Request::domain();{/php}/uploads/{:isset($list.image)?$list.image:''}">
+            {else /}
+            <img class="layui-upload-img" id="demo1" style="width: 30%;height: 30%">
+            {/if}
+            <input type="hidden" id="image_url" name="image_url" value="{:isset($list.image)?$list.image:''}">
+            <p id="demoText"></p>
+        </div>
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">活动商品</label>
+
+        <div class="layui-input-block" id="wheel">
+            <input type="text" name="product_name" placeholder="请选择" autocomplete="off" class="layui-input"
+                   value="{:isset($list.product_name)?$list.product_name:''}" lay-verify="required" readonly style="width: 150px;display: inline-block">
+            <input type="hidden" name="product_id" value="{:isset($list.product_id)?$list.product_id:''}">
+            <button type="button" data-method="offset" class="layui-btn" style="display: inline-block" >选择活动商品</button>
+        </div>
+    </div>
+
+    <div class="layui-form-item" >
+        <label class="layui-form-label">开始时间:</label>
+        <input type="text" name="start_time" id="start_time" value="{:isset($list.start_time)?$list.start_time:''}" placeholder="请选择开始时间" class="layui-input" style="width:300px;"  lay-verify="required">
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">结束时间:</label>
+        <input type="text" name="end_time" id="end_time" value="{:isset($list.end_time)?$list.end_time:''}" placeholder="请选择结束时间" class="layui-input" style="width:300px;" lay-verify="required">
+    </div>
+
+    <div class="layui-form-item">
+        <label class="layui-form-label">概率:</label>
+        <input type="number" name="probability" value="{:isset($list.probability)?$list.probability:''}" placeholder="请填写概率" class="layui-input" style="width:300px;" lay-verify="required">
+    </div>
+
+    <div class="layui-form-item">
+        <div class="layui-input-block">
+            <input type="hidden" name="id" value="{:isset($list['id'])?$list['id']:''}">
+            <input type="hidden" name="__token__" id="token" value="{$Request.token}"/>
+            <button class="layui-btn" lay-submit lay-filter="*">立即提交</button>
+            <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+    </div>
+</form>
+{/block}
+{block name="script"}
+{css href="/form-select/formSelects-v4.css" /}
+<script>
+    layui.config({
+        base: '/form-select/' //此处路径请自行处理, 可以使用绝对路径
+    }).extend({
+        formSelects: 'formSelects-v4'
+    });
+    layui.use(['form', 'jquery', 'formSelects','upload','laydate'], function () {
+        var formSelects = layui.formSelects, form = layui.form, $ = layui.jquery, upload = layui.upload;
+
+        //日期控件
+        var laydate = layui.laydate;
+        //执行一个laydate实例
+        laydate.render({
+            elem: '#start_time' //指定元素
+        });
+        laydate.render({
+            elem: '#end_time' //指定元素
+        });
+        //普通图片上传
+        var uploadInst = upload.render({
+            elem: '#test1'
+            ,url: "{:url('/admin/upload')}" //改成您自己的上传接口
+            ,before: function(obj){
+                //预读本地文件示例，不支持ie8
+                obj.preview(function(index, file, result){
+                    $('#demo1').attr('src', result); //图片链接（base64）
+                });
+            }
+            ,done: function(res){
+                //如果上传失败
+                if(res.code > 0){
+                    return layer.msg('上传失败');
+                }else{
+                    $('#image_url').attr('value',res.data)
+                }
+                //上传成功
+            }
+            ,error: function(){
+                //演示失败状态，并实现重传
+                var demoText = $('#demoText');
+                demoText.html('<span style="color: #FF5722;">上传失败</span> <a class="layui-btn layui-btn-xs demo-reload">重试</a>');
+                demoText.find('.demo-reload').on('click', function(){
+                    uploadInst.upload();
+                });
+            },
+        });
+            var active = {
+                offset: function(othis){
+                    layer.open({
+                        type: 2
+                        ,offset: 'auto'
+                        ,title:'选择活动商品'
+                        ,area: ['80%', '80%']
+                        ,shadeClose: false
+                        ,btn: ['确定', '关闭']
+                        ,shade: 0 //不显示遮罩
+                        ,content: "{:url('/admin/product')}"
+                        ,yes: function(layero, index){
+                            var newpsw = window[index.find('iframe')[0]['name']];
+                            var value=newpsw.getChoseId();
+                            console.log(value)
+                            $('input[name=product_name]').attr('value', value[0].name);
+                            $('input[name=product_id]').attr('value', value[0].id);
+                            layer.closeAll();
+                        }
+
+
+                    });
+                },
+
+
+            };
+
+            $('#wheel .layui-btn').on('click', function(){
+            var othis = $(this), method = othis.data('method');
+            active[method] ? active[method].call(this, othis) : '';
+        });
+
+
+        //表单提交
+        form.on("submit(*)", function (data) {
+            var obj = $(this);
+            obj.attr("disabled", "disabled").addClass("layui-disabled");
+            $.post(data.form.action, data.field, function (data) {
+                var icon = 5;
+                if (data.code) {
+                    icon = 6;
+                }
+                layer.msg(data.msg, {icon: icon, time: 1500}, function () {   //提示的插件，可以使用alert代替
+                    if (data.code) {
+                        setTimeout(function () {
+                            //刷新父页面
+                            parent.location.reload();
+                        }, 500);
+                    } else {
+                        $('#token').val(data.data.token);
+                        obj.removeAttr("disabled").removeClass("layui-disabled");
+                    }
+                });
+            }, 'json');
+            return false;
+        });
+    });
+</script>
+{/block}
